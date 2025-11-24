@@ -1,8 +1,8 @@
 from pathlib import Path
-from video_process import *
+from video_process.video_process import *
 
-BASE_FOLDER = Path(r"C:\Users\david\Videos\pruebasTFG")
-INPUT_VIDEO = BASE_FOLDER / "102.mp4"
+BASE_FOLDER = Path(r"C:\Users\david\Desktop\FinalData\Slice\Platform")
+INPUT_VIDEO = BASE_FOLDER / "53.mp4"
 OUTPUT_FOLDER = BASE_FOLDER / "Results"
 
 
