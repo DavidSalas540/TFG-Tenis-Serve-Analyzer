@@ -1,5 +1,5 @@
 from pathlib import Path
-from video_process.video_process import *
+from video_process.video_process_module import *
 
 BASE_FOLDER = Path(r"C:\Users\david\Desktop\FinalData\Slice\Platform")
 INPUT_VIDEO = BASE_FOLDER / "53.mp4"

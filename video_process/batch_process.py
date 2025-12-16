@@ -1,5 +1,5 @@
 from pathlib import Path
-from video_process.video_process import pipeline
+from video_process.video_process_module import pipeline
 from video_process.config import (
     FLAT_PIN_POINT_FOLDER, FLAT_PLATFORM_FOLDER,
     KICK_PIN_POINT_FOLDER, KICK_PLATFORM_FOLDER,

@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from scipy.signal import savgol_filter
 
 
@@ -34,6 +33,8 @@ def process_video(input_video):
 
     raw_landmarks = []
     frame_id = 0
+    
+    detected_frames = 0
                        
     with mp_pose.Pose(
         static_image_mode=False,       # Video mode, this learns from the previous frame
@@ -55,17 +56,39 @@ def process_video(input_video):
             frame_data = {'frame_id': frame_id}
             
             if results.pose_landmarks:
+                detected_frames += 1
+                
                 for i, landmark in enumerate(results.pose_landmarks.landmark):
                     name = mp_pose.PoseLandmark(i).name
                     frame_data[f'{name}_x'] = landmark.x
                     frame_data[f'{name}_y'] = landmark.y
                     frame_data[f'{name}_z'] = landmark.z
                     frame_data[f'{name}_v'] = landmark.visibility
+            else:
+                for i in range(33):
+                    name = mp_pose.PoseLandmark(i).name
+                    frame_data[f'{name}_x'] = np.nan
+                    frame_data[f'{name}_y'] = np.nan
+                    frame_data[f'{name}_z'] = np.nan
+                    frame_data[f'{name}_v'] = np.nan
             
             raw_landmarks.append(frame_data)
             frame_id += 1
             
     cap.release()
+    
+    if frame_id == 0:
+        quality_ratio = 0
+    else:
+        quality_ratio = detected_frames / frame_id
+    
+    # 2. QUALITY GATE 
+    quality_gate = 0.60
+    
+    if quality_ratio < quality_gate:
+        print(f"Discarted video: Not enough quality (<{quality_ratio*100}% detected).")
+        return None, 0, 0, 0
+    
     df_raw = pd.DataFrame(raw_landmarks)
     return df_raw, fps, width, height
 
@@ -75,6 +98,25 @@ def process_video(input_video):
 """
 def cleaning_data(df_raw):
     df_clean = df_raw.copy()
+    
+    landmarks_columns = [col for col in df_clean.columns if col != 'frame_id']
+    
+    # INTERPOLATION
+    df_clean[landmarks_columns] = df_clean[landmarks_columns].interpolate(method='linear', limit_direction='both')
+    
+    # NaNs in the borders
+    df_clean[landmarks_columns] = df_clean[landmarks_columns].fillna(method='bfill').fillna(method='ffill')
+    
+    columns_to_smooth = [col for col in landmarks_columns if not col.endswith('_v')]
+    
+    # Smoothing - Savitzly-Golay Filter
+    for col in columns_to_smooth:
+        try:
+            if len(df_clean)>5:
+                df_clean[col] = savgol_filter(df_clean[col], window_length=5, polyorder=2)
+        except Exception as e:
+            pass
+    
     return df_clean
 
 

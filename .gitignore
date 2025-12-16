@@ -1,1 +1,17 @@
-config.py
+# --- SISTEMA / PYTHON ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+.vscode/
+.idea/
+.DS_Store
+
+# --- DATOS PESADOS (Vital para Computer Vision) ---
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
