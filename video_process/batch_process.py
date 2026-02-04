@@ -1,11 +1,6 @@
 from pathlib import Path
-from video_process.video_process_module import pipeline
-from video_process.config import (
-    FLAT_PIN_POINT_FOLDER, FLAT_PLATFORM_FOLDER,
-    KICK_PIN_POINT_FOLDER, KICK_PLATFORM_FOLDER,
-    SLICE_PIN_POINT_FOLDER, SLICE_PLATFORM_FOLDER,
-    OUTPUT_VIDEOS_FOLDER, OUTPUT_CSVS_FOLDER
-)
+from video_process_module import pipeline
+from config import *
 
 def ensure_output_dirs():
     OUTPUT_VIDEOS_FOLDER.mkdir(parents=True, exist_ok=True)
@@ -24,14 +19,28 @@ def process_folder(folder: Path, serve_effect: str, stance: str):
         print(f"No .mp4 videos found in folder: {folder.name}")
         return
 
-    for video_path in videos:
-        analyzed_name = f"{serve_effect}_{stance}_{video_path.name}"
+    total_videos = len(videos)
+
+    for i, video_path in enumerate(videos, 1):
+        video_id = video_path.stem.split('_')[0]
+        
+        analyzed_name = f"{serve_effect}_{stance}_{video_id}.mp4"
         out_video = OUTPUT_VIDEOS_FOLDER / analyzed_name
         
-        csv_name = f"{serve_effect}_{stance}_{video_path.stem}_landmarks.csv"
+        csv_name = f"{serve_effect}_{stance}_{video_id}_landmarks.csv"
         csv_out = OUTPUT_CSVS_FOLDER / csv_name 
         
-        pipeline(video_path, out_video, csv_out)
+        if csv_out.exists():
+            print(f"[{i}/{total_videos}] Skipping {video_path} (Ya existe)")
+            continue
+        
+        print(f"[{i}/{total_videos}] Processing {video_path.name}")
+        
+        try:
+            pipeline(video_path, out_video, csv_out)
+        except Exception as e:
+            print(f"ERROR CRÍTICO en el video: {video_path.name}")
+            print(f"Cause: {e}")
 
 
 if __name__ == "__main__":
@@ -42,4 +51,6 @@ if __name__ == "__main__":
     process_folder(KICK_PLATFORM_FOLDER, "kick","platform")
     process_folder(SLICE_PIN_POINT_FOLDER, "slice","pinpoint")
     process_folder(SLICE_PLATFORM_FOLDER, "slice","platform")
+    
+    print("\n BATCH_PROCESS COMPLETED.")
     

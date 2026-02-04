@@ -1,62 +1,78 @@
 import pandas as pd
 from pathlib import Path
-from metrics_process import metrics_pipeline
+from features_extractor import *
+from features_extractor import *
+from event_detector import *
 
-CSV_FOLDER = Path(r"C:\Users\david\Desktop\Results\datos_csv")
-OUTPUT_METRICS_FILE = Path(r"C:\Users\david\Desktop\Results\Dataset_Final_Metrics\dataset_final_metrics.csv")
-
-
-"""
-    STEP 1: Set up the list to save all the new dataframes 
-"""
-dataset_list = []
-
-csv_files = list(CSV_FOLDER.glob('*.csv'))
-print(f"We are going to process {len(csv_files)} csv files.")
+FOLDER_CSVS = Path(r"C:\Users\david\Documents\TFG\data_csv")
 
 
-
-"""
-    STEP 2: With a loop obtaining all the metrics from all the videos.
-"""
-for csv in csv_files:
-    print(f"processing: {csv.name}")
+def process_single_csv(csv_path):
     try:
-        parts = csv.stem.split("_")
-        
-        effect = parts[0]
-        stance = parts [1]
-        video_id = parts[2]
-    except:
-        print("The name format of the video is not the required.")
+        df = pd.read_csv(csv_path)
     
-    df_landmarks = pd.read_csv(csv)
+        # 1. We calculate the angles of knee taking into account the hip and the ankle
+        angles = []
+        for i in range(len(df)):
+            l_hip = [df.loc[i, 'LEFT_HIP_x'], df.loc[i, 'LEFT_HIP_y']]
+            l_knee = [df.loc[i, 'LEFT_KNEE_x'], df.loc[i, 'LEFT_KNEE_y']]
+            l_ankle = [df.loc[i, 'LEFT_ANKLE_x'], df.loc[i, 'LEFT_ANKLE_y']]
+            angles.append(calculate_angles(l_hip, l_knee, l_ankle))
+        
+        # 2. We calculate the frame of the angles of the knee
+        start_p, min_p, max_p, target_p = detectar_fases_saque(angles)
+        
+        
+        # 3. We use a quality filter to know if Mediapipe created an impossible angle
+        if angles[min_p] < 45:
+            print(f"Descarte: {csv_path.name} (Ángulo de rodilla imposible) {round(angles[min_p], 2)}º")
+            return None 
+        
+        # 4. We Calculate the METRICS
+        stance_data = calculate_stance_metrics(df, start_p, target_p)
+        #effect_data = calculate_effect_metrics(df, events)
+        
+        # 5. We name the stance label
+        name = csv_path.name.lower()
+        if "pinpoint" in name: label = 0
+        elif "platform" in name: label = 1
+        else: label = -1
+        
+        # 6. We consolidate the row
+        if label != -1:
+            row_data = {
+            'video_id': csv_path.stem,
+            "stance_label": label,
+            "knee_start": round(angles[start_p], 2),
+            "knee_min": round(angles[min_p], 2),
+            "knee_Target": round(angles[target_p], 2),
+            **stance_data,
+            #**effect_data
+            }          
+        else: print("ERROR in the label of the CSV.")
+        
+        return row_data
     
-    if df_landmarks is not None and not df_landmarks.empty:
-        
-        video_metrics = metrics_pipeline(df_landmarks)
-        
-        video_metrics['video_id'] = video_id
-        video_metrics['stance'] = stance
-        video_metrics['effect'] = effect
-        
-        dataset_list.append(video_metrics)
+    except Exception as e:
+        print(f"Error procesando {csv_path}: {e}")
+        return None
     
-    else: print("The csv is empty")
 
+def main_batch_process():
+    final_dataset = []
+    
+    all_files = list(FOLDER_CSVS.glob("*.csv"))
+    
+    for csv_file in all_files:
+        row = process_single_csv(csv_file)
+        if row is not None:
+            final_dataset.append(row)
+        else: print(f"ERROR during the process of the csv {csv_file}")
+    
+    if final_dataset:
+        pd.DataFrame(final_dataset).to_csv("train_dataset.csv", index=False)
+        print(f"Dataset generated with {len(final_dataset)} rows")
 
-"""
-    STEP 3: Create the final dataframe with all the metrics
-"""
-print("Creating the final dataset")
-df_final = pd.DataFrame(dataset_list)
-
-cols = ['video_id', 'stance', 'effect'] + [c for c in df_final.columns if c not in ['video_id', 'stance', 'effect', 'filename']]
-df_final[cols]
-
-"""
-    STEP 4: Save the dataframe in a csv
-"""
-
-df_final.to_csv(OUTPUT_METRICS_FILE, index = False)
-print(f"Dataset saved it in {OUTPUT_METRICS_FILE}")
+if __name__ == "__main__":
+    main_batch_process()
+    

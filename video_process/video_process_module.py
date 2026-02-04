@@ -1,3 +1,8 @@
+import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['GLOG_minloglevel'] = '2'
+
 import cv2
 import mediapipe as mp
 import numpy as np
@@ -90,6 +95,7 @@ def process_video(input_video):
         return None, 0, 0, 0
     
     df_raw = pd.DataFrame(raw_landmarks)
+    
     return df_raw, fps, width, height
 
 
@@ -101,15 +107,15 @@ def cleaning_data(df_raw):
     
     landmarks_columns = [col for col in df_clean.columns if col != 'frame_id']
     
-    # INTERPOLATION
+    # INTERPOLATION - Traze a rect line between two known points
     df_clean[landmarks_columns] = df_clean[landmarks_columns].interpolate(method='linear', limit_direction='both')
     
-    # NaNs in the borders
-    df_clean[landmarks_columns] = df_clean[landmarks_columns].fillna(method='bfill').fillna(method='ffill')
+    # NaNs in the borders, if there is no beginning or nor ending
+    df_clean[landmarks_columns] = df_clean[landmarks_columns].bfill().ffill()
     
     columns_to_smooth = [col for col in landmarks_columns if not col.endswith('_v')]
     
-    # Smoothing - Savitzly-Golay Filter
+    # Smoothing - Savitzly-Golay Filter: if there is jitter
     for col in columns_to_smooth:
         try:
             if len(df_clean)>5:
@@ -209,8 +215,13 @@ def save_csv(df_clean, output_csv_path):
 """
 def pipeline(input_video, output_video_path, output_csv_path):
     df_raw, f, w, h = process_video(input_video)
+    if df_raw is None or df_raw.empty:
+        print(f"CRITICAL ERROR, Pipeline aborted for {input_video.name}")
+        return
+
     df_clean = cleaning_data(df_raw)
+    if df_clean is None:
+        return
+    
     create_comparision_video(input_video, df_raw, f, w, h, df_clean, output_video_path)
     save_csv(df_clean, output_csv_path)
-
-        

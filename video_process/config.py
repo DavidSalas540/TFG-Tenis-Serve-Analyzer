@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # INPUT VARIABLE
-INPUT_FOLDER = Path(r"C:\Users\David\Desktop\FinalData")
+INPUT_FOLDER = Path(r"C:\Users\David\Desktop\RawData")
 
 
 # FLAT VARIABLES
@@ -24,5 +24,5 @@ SLICE_PLATFORM_FOLDER = SLICE_SERVES_FOLDER / "Platform"
 
 # OUTPUT VARIABLES
 OUTPUT_FOLDER = Path(r"C:\Users\David\Desktop\Results")
-OUTPUT_VIDEOS_FOLDER = OUTPUT_FOLDER / "videos_analizados"
-OUTPUT_CSVS_FOLDER = OUTPUT_FOLDER / "datos_csv"
+OUTPUT_VIDEOS_FOLDER = OUTPUT_FOLDER / "media_pipe_videos"
+OUTPUT_CSVS_FOLDER = OUTPUT_FOLDER / "data_csv"
