@@ -1,5 +1,6 @@
 from geometry import *
 from scipy.signal import find_peaks
+from tennis_metrics import get_knee_angles_series
 
 def detectar_fases_saque(angulos, max_dist_frames=200):
    
@@ -44,3 +45,7 @@ def detectar_fases_saque(angulos, max_dist_frames=200):
     start = s_search + np.argmax(pre_data) if len(pre_data) > 0 else 0
     
     return start, best_min, best_max, target
+
+def calculate_knee_frame(df):
+    angles_knee = get_knee_angles_series(df)
+    return detectar_fases_saque(angles_knee)
