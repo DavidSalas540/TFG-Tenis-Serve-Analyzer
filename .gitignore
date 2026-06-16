@@ -1,3 +1,7 @@
+# --- FIREBASE ---
+*firebase-adminsdk*.json
+.env.local
+
 # --- SISTEMA / PYTHON ---
 __pycache__/
 *.py[cod]

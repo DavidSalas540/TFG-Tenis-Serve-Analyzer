@@ -29,9 +29,9 @@ HIP_DRIVE_MODEST   = 2.0    # < modest → score 4
 HIP_DRIVE_GOOD     = 5.0    # < good → score 7
                              # ≥ 5 → aggressive → score 10
 
-JUMP_LOW       = 4.8    # P10
-JUMP_MODERATE  = 6.0    # P25
-JUMP_OPTIMAL   = 10.6   # P75
+JUMP_LOW       = 4
+JUMP_MODERATE  = 6.0
+JUMP_OPTIMAL   = 8.0
 
 SHOULDER_LOW      = 10.0   # abs < 10 → low X-factor → score 1
 SHOULDER_MODERATE = 25.0   # abs < 25 → moderate → score 4
@@ -42,8 +42,8 @@ ARM_VERY_BENT  = 150.0
 ARM_MODERATE   = 165.0
 ARM_GOOD       = 175.0
 
-NON_DOM_LOW    = 165.0   # 160-165 transition (already filtered < 160)
-NON_DOM_OPT   = 180.0    # 165-180 optimal
+NON_DOM_LOW    = 165.0   # < 165 → malo    → score 1
+NON_DOM_OPT    = 176.0   # < 176 → moderado → score 5  |  ≥ 176 → excelente → score 10
 
 TRUNK_LOW      = 1.0
 TRUNK_MODERATE = 2.0
@@ -55,42 +55,138 @@ TRUNK_GOOD     = 4.0
 WEIGHTS = {
     'knee_loading':         2.0,
     'hip_drive':            2.0,
-    'jump':                 2.0,
-    'shoulder_rotation':    1.5,
+    'jump':                 1.5,
+    'shoulder_rotation':    2.0,
     'arm_extension':        1.5,
     'non_dominant_arm':     1.5,
     'trunk_arch':           1.0,
 }
 
+# ─── Level-based metric progression ─────────────────────────────────────────
 
-# ─── Individual classifiers ──────────────────────────────────────────────────
+LEVEL_METRICS = {
+    1: {'arm_extension', 'non_dominant_arm'},
+    2: {'arm_extension', 'non_dominant_arm', 'knee_loading'},
+    3: {'arm_extension', 'non_dominant_arm', 'knee_loading', 'hip_drive', 'trunk_arch'},
+    4: {'arm_extension', 'non_dominant_arm', 'knee_loading', 'hip_drive', 'trunk_arch', 'shoulder_rotation'},
+    5: {'arm_extension', 'non_dominant_arm', 'knee_loading', 'hip_drive', 'trunk_arch', 'shoulder_rotation', 'jump'},
+}
 
+LEVEL_NAMES = {
+    1: 'Iniciación',
+    2: 'Básico',
+    3: 'Intermedio',
+    4: 'Avanzado',
+    5: 'Competición',
+}
+
+_LOCKED = {
+    'category': 'No evaluado',
+    'score':    0,
+    'tip':      'Esta métrica se desbloquea en un nivel superior. ¡Sigue practicando!',
+    'active':   False,
+}
+
+
+# CLASIFIERS
 def classify_knee_loading(knee_min):
     """Classifies knee flexion depth at maximum loading phase."""
-    if knee_min < KNEE_DEEP:
+    if knee_min <= KNEE_DEEP:
         return {
-            'category': 'Carga profunda',
+            'category': 'Flexión profunda',
             'score': 10,
-            'tip': 'Carga de rodillas excelente — máxima energía elástica disponible.',
+            'tip': 'Flexión de rodillas excelente! máxima energía elástica disponible, ¡buen trabajo!.',
         }
-    if knee_min < KNEE_OPTIMAL:
+    if knee_min <= KNEE_OPTIMAL:
         return {
-            'category': 'Carga óptima',
+            'category': 'Flexión óptima',
             'score': 7,
-            'tip': 'Buena carga. Intenta profundizar un poco más para ganar potencia vertical.',
+            'tip': '¡Buena flexión de rodillas!. ¡Aún se puede flexionar un poco más! Si por problemas de rodillas o tu propia técnica no quieres/puedes, la flexión sigue siendo correcta.',
         }
-    if knee_min < KNEE_MODERATE:
+    if knee_min <= KNEE_MODERATE:
         return {
-            'category': 'Carga moderada',
+            'category': 'Flexión moderada',
             'score': 4,
-            'tip': 'La carga es insuficiente. Flexiona más las rodillas durante la fase de carga.',
+            'tip': 'Flexión de rodillas insuficiente. ¡Una mayor flexión de rodillas durante la fase de carga, generará mayor potencia!.',
         }
     return {
-        'category': 'Carga insuficiente',
+        'category': 'Flexión insuficiente',
         'score': 1,
-        'tip': 'Rodillas casi rectas durante la carga. Trabaja la flexión para generar impulso.',
+        'tip': 'Apenas existe flexión de Rodillas. ¡Si flexionas durante la fase de carga, lograrás más impulso!.',
     }
 
+def classify_jump(jump):
+    """Classifies vertical jump height normalized by hip width."""
+    if jump < JUMP_LOW:
+        return {
+            'category': 'Salto nulo',
+            'score': 1,
+            'tip': 'El salto es prácticamente inexistente. Un pequeño salto te ayudaría a mejorar la explosividad del saque.',
+        }
+    if jump < JUMP_MODERATE:
+        return {
+            'category': 'Salto aceptable',
+            'score': 4,
+            'tip': 'Salto por debajo de la media. Intenta saltar un poco más sin perder la coordinación.',
+        }
+    if jump < JUMP_OPTIMAL:
+        return {
+            'category': 'Salto óptimo',
+            'score': 7,
+            'tip': '¡Buen salto!. Estás aprovechando bien la energía del salto.',
+        }
+    return {
+        'category': 'Salto agresivo',
+        'score': 10,
+        'tip': '¡Salto excelente! Buena coordinación. CUIDADO: Si no coordinas el resto de las articulaciones y saltas de manera agresiva, aumentará el riesgo de lesión.',
+    }
+
+def classify_arm_extension(arm_extension):
+    """Classifies dominant arm extension at ball impact."""
+    if arm_extension < ARM_VERY_BENT:
+        return {
+            'category': 'Codo muy cerrado',
+            'score': 1,
+            'tip': 'El codo está muy doblado en el golpe. ¡Debes estirar el brazo al impactar la pelota!',
+        }
+    if arm_extension < ARM_MODERATE:
+        return {
+            'category': 'Extensión moderada',
+            'score': 4,
+            'tip': 'El brazo no llega a estirarse del todo. ¡Trabaja la extensión final al soltar el golpe!',
+        }
+    if arm_extension < ARM_GOOD:
+        return {
+            'category': 'Buena extensión',
+            'score': 7,
+            'tip': '¡Buena extensión de brazo!. Le falta poco para llegar al máximo.',
+        }
+    return {
+        'category': 'Extensión perfecta',
+        'score': 10,
+        'tip': '¡Extensión perfecta para el impacto!',
+    }
+
+
+def classify_non_dominant_arm(angle):
+    """Classifies non-dominant arm elevation at trophy position."""
+    if angle < NON_DOM_LOW:
+        return {
+            'category': 'Posición baja',
+            'score': 1,
+            'tip': '¡El brazo no dominante de lanzamiento de bola (Toss) está por debajo del ideal! Mantenlo arriba hasta el golpe.',
+        }
+    if angle < NON_DOM_OPT:
+        return {
+            'category': 'Posición moderada',
+            'score': 5,
+            'tip': '¡¡El brazo no dominante de lanzamiento de bola (Toss) puede subir un poco más!',
+        }
+    return {
+        'category': 'Posición correcta',
+        'score': 10,
+        'tip': '¡El brazo no dominante de lanzamiento de bola (Toss) está perfecto!',
+    }
 
 def classify_hip_drive(hip_drive):
     """Classifies horizontal hip projection from start to loading phase."""
@@ -98,53 +194,25 @@ def classify_hip_drive(hip_drive):
         return {
             'category': 'Impulso insuficiente',
             'score': 1,
-            'tip': 'Las caderas apenas se proyectan hacia adelante. Trabaja el arco de cadera.',
+            'tip': '¡Proyección inexistente! Las caderas apenas se proyectan hacia adelante.',
         }
     if hip_drive < HIP_DRIVE_MODEST:
         return {
             'category': 'Impulso modesto',
             'score': 4,
-            'tip': 'Proyección de caderas por debajo de la media. Empuja más las caderas al frente.',
+            'tip': '¡Proyección de caderas por debajo de la media! Empuja más las caderas al frente.',
         }
     if hip_drive < HIP_DRIVE_GOOD:
         return {
             'category': 'Impulso bueno',
             'score': 7,
-            'tip': 'Buen empuje de caderas. Estás usando bien el cuerpo como palanca.',
+            'tip': '¡Buen empuje de caderas! Estás usando bien el cuerpo como palanca.',
         }
     return {
         'category': 'Impulso agresivo',
         'score': 10,
-        'tip': 'Proyección de caderas excelente — estás generando máxima potencia elástica.',
+        'tip': '¡Proyección de caderas excelente! estás generando máxima potencia elástica. CUIDADO: Si no coordinas el resto del cuerpo, proyectar asiladamente la cadera puede aumentar el    riesgo de lesión',
     }
-
-
-def classify_jump(jump):
-    """Classifies vertical jump height normalized by hip width."""
-    if jump < JUMP_LOW:
-        return {
-            'category': 'Despegue bajo',
-            'score': 1,
-            'tip': 'El salto es muy bajo. Trabaja la extensión de piernas en el impulso.',
-        }
-    if jump < JUMP_MODERATE:
-        return {
-            'category': 'Despegue moderado',
-            'score': 4,
-            'tip': 'Salto por debajo de la media. Intenta coordinar mejor la carga con el despegue.',
-        }
-    if jump < JUMP_OPTIMAL:
-        return {
-            'category': 'Despegue óptimo',
-            'score': 7,
-            'tip': 'Buen despegue. Estás aprovechando bien la energía de la carga.',
-        }
-    return {
-        'category': 'Despegue explosivo',
-        'score': 10,
-        'tip': 'Despegue excelente — potencia vertical de élite.',
-    }
-
 
 def classify_shoulder_rotation(rotation):
     """
@@ -156,93 +224,50 @@ def classify_shoulder_rotation(rotation):
         return {
             'category': 'Rotación insuficiente',
             'score': 1,
-            'tip': 'Poca separación entre hombros y caderas. Trabaja la rotación del tronco.',
+            'tip': 'Apenas giras el tronco. Lleva el hombro derecho hacia atrás durante el momento de carga.',
         }
     if magnitude < SHOULDER_MODERATE:
         return {
             'category': 'Rotación moderada',
             'score': 4,
-            'tip': 'X-factor moderado. Intenta mantener los hombros cerrados mientras las caderas rotan.',
+            'tip': 'Falta giro. En la posición de trofeo, el hombro derecho debe quedar más retrasado que la cadera.',
         }
     if magnitude < SHOULDER_GOOD:
         return {
             'category': 'Buena rotación',
             'score': 7,
-            'tip': 'Buena separación hombros/caderas. Estás acumulando energía rotacional correctamente.',
+            'tip': '¡Buen giro!. Abre caderas un poco antes de soltar los hombros para ganar más velocidad.',
         }
     return {
         'category': 'Rotación excelente',
         'score': 10,
-        'tip': 'X-factor excelente — máxima acumulación de energía rotacional.',
+        'tip': '¡Excelente giro de tronco!',
     }
-
-
-def classify_arm_extension(arm_extension):
-    """Classifies dominant arm extension at ball impact."""
-    if arm_extension < ARM_VERY_BENT:
-        return {
-            'category': 'Codo muy cerrado',
-            'score': 1,
-            'tip': 'El codo está demasiado flexionado en el impacto. Extiende más el brazo al golpear.',
-        }
-    if arm_extension < ARM_MODERATE:
-        return {
-            'category': 'Extensión moderada',
-            'score': 4,
-            'tip': 'Brazo no completamente extendido. Trabaja la extensión total en el punto de contacto.',
-        }
-    if arm_extension < ARM_GOOD:
-        return {
-            'category': 'Buena extensión',
-            'score': 7,
-            'tip': 'Buena extensión de brazo. Cerca del óptimo biomecánico.',
-        }
-    return {
-        'category': 'Extensión completa',
-        'score': 10,
-        'tip': 'Brazo totalmente extendido en el impacto — técnica correcta.',
-    }
-
-
-def classify_non_dominant_arm(angle):
-    """Classifies non-dominant arm elevation at trophy position."""
-    if angle < NON_DOM_LOW:
-        return {
-            'category': 'Transición',
-            'score': 5,
-            'tip': 'El brazo no dominante está por debajo del ideal. Súbelo más hacia la "plomada virtual".',
-        }
-    return {
-        'category': 'Óptimo',
-        'score': 10,
-        'tip': 'Posición del brazo no dominante correcta — buena referencia de altura de impacto.',
-    }
-
 
 def classify_trunk_arch(trunk_arch):
     """Classifies body bow shape (hip center vs shoulder center projection)."""
     if trunk_arch < TRUNK_LOW:
         return {
             'category': 'Arco mínimo',
-            'score': 3,
-            'tip': 'Poca proyección de cadera respecto a los hombros. Trabaja el arco corporal.',
+            'score': 1,
+            'tip': 'Las caderas no se adelantan a los hombros. Empuja las caderas hacia la red al subir el brazo.',
         }
     if trunk_arch < TRUNK_MODERATE:
         return {
             'category': 'Arco moderado',
-            'score': 5,
-            'tip': 'Arco corporal moderado. Hay margen para mejorar la proyección de caderas.',
+            'score': 4,
+            'tip': 'Poca separación entre caderas y hombros. Intenta que las caderas lleguen antes que el brazo.',
         }
     if trunk_arch < TRUNK_GOOD:
         return {
             'category': 'Buen arco',
-            'score': 8,
-            'tip': 'Buen arco corporal. Las caderas están bien proyectadas respecto a los hombros.',
+            'score': 7,
+            'tip': 'Buen arco corporal. Las caderas van por delante de los hombros correctamente.',
         }
     return {
         'category': 'Arco pronunciado',
         'score': 10,
-        'tip': 'Arco corporal excelente — muy buena proyección de caderas.',
+        'tip': 'Muy buen arco. Las caderas se proyectan bien hacia adelante. Mantenlo.',
     }
 
 
@@ -256,16 +281,22 @@ def classify_serve(
     arm_extension,
     non_dominant_arm_angle,
     trunk_arch,
+    nivel=5,
 ):
     """
     Runs all metric classifiers and computes the overall serve quality score.
+    Only metrics unlocked at `nivel` contribute to the score; the rest are
+    marked as inactive and shown as locked in the UI.
 
     Returns a dict with:
-      - 'total_score'  : float 0-100
+      - 'total_score'  : float 0-100 (based only on active metrics)
       - 'grade'        : letter grade (A/B/C/D)
-      - 'breakdown'    : dict of per-metric results
+      - 'breakdown'    : dict of per-metric results (all 7 metrics)
+      - 'nivel'        : the level used for scoring
     """
-    breakdown = {
+    active = LEVEL_METRICS.get(nivel, LEVEL_METRICS[5])
+
+    raw = {
         'knee_loading':      classify_knee_loading(knee_min),
         'hip_drive':         classify_hip_drive(hip_drive),
         'jump':              classify_jump(jump),
@@ -275,12 +306,17 @@ def classify_serve(
         'trunk_arch':        classify_trunk_arch(trunk_arch),
     }
 
+    breakdown = {
+        key: ({**result, 'active': True} if key in active else dict(_LOCKED))
+        for key, result in raw.items()
+    }
+
     weighted_sum = sum(
-        breakdown[key]['score'] * WEIGHTS[key]
-        for key in WEIGHTS
+        float(raw[key]['score']) * WEIGHTS[key]
+        for key in active if key in WEIGHTS
     )
-    max_possible = sum(10 * w for w in WEIGHTS.values())
-    total_score  = round((weighted_sum / max_possible) * 100, 1)
+    max_possible = sum(WEIGHTS[key] for key in active if key in WEIGHTS)
+    total_score  = round((weighted_sum / max_possible) * 100, 1) if max_possible else 0.0
 
     if total_score >= 80:
         grade = 'A'
@@ -295,6 +331,7 @@ def classify_serve(
         'total_score': total_score,
         'grade':       grade,
         'breakdown':   breakdown,
+        'nivel':       nivel,
     }
 
 

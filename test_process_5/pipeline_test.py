@@ -41,7 +41,7 @@ from quality_checks import validate_knee_integrity
 from feedback_classifier import classify_serve, print_report
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-INPUT_VIDEO = Path(r"D:\desk\Pruebas\David_serve.mp4")
+INPUT_VIDEO = Path(r"C:\Users\david\Downloads\videoOficial.mp4")
 OUTPUT_DIR  = Path(__file__).parent
 MODELS_DIR  = TFG_DIR / 'model_ai_process_4'
 

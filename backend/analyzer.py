@@ -76,7 +76,7 @@ def _convert_to_mp4(input_path: Path, output_path: Path):
         .run()
     )
 
-def analyze(video_path: Path) -> dict:
+def analyze(video_path: Path, nivel: int = 5) -> dict:
 
     suffix = video_path.suffix.lower()
     if suffix not in ACCEPTED_EXTENSIONS:
@@ -119,7 +119,7 @@ def analyze(video_path: Path) -> dict:
 
         hip_width   = get_hip_width(df_clean, start_f)
         stance_data = calculate_stance_metrics(df_clean, start_f, target_f)
-        effect_data = calculate_effect_metrics(df_clean, start_f, max_f, hip_width, mp4_path)
+        effect_data = calculate_effect_metrics(df_clean, start_f, max_f, hip_width, mp4_path, validate=False)
 
         metrics = {
             'knee_start':             round(knee_angles[start_f],  2),
@@ -147,6 +147,7 @@ def analyze(video_path: Path) -> dict:
             arm_extension          = metrics.get('arm_extension', 0),
             non_dominant_arm_angle = metrics['non_dominant_arm_angle'],
             trunk_arch             = metrics['trunk_arch'],
+            nivel                  = nivel,
         )
 
         # Re-encodar con H.264 (OpenCV usa mp4v que los navegadores no soportan)

@@ -42,10 +42,11 @@ def calculate_stance_metrics(df, start_f, target_f):
     }
 
 
-def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path):
+def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path, validate=True):
     """
-    Returns a dict with jump, impact_frame, lateral_offset, and arm_extension.
-    Returns None if any metric fails quality validation.
+    Returns a dict with jump, lateral_offset, and arm_extension.
+    validate=True  → training pipeline: returns None if quality checks fail.
+    validate=False → backend: always returns the data, never discards.
     """
     jump           = calculate_max_jump(df, start_f, max_f, hip_width)
     metrics_impact = extract_impact_metrics(df, start_f, max_f)
@@ -62,10 +63,11 @@ def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path):
         "arm_extension":  arm_extension,
     }
 
-    ok, cause = validate_effect_metrics(effect_data)
-    if not ok:
-        print(f"Discarded {csv_path.name}: {cause}")
-        return None
+    if validate:
+        ok, cause = validate_effect_metrics(effect_data)
+        if not ok:
+            print(f"Discarded {csv_path.name}: {cause}")
+            return None
 
     return effect_data
 
