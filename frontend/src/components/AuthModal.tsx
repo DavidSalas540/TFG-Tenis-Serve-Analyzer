@@ -105,7 +105,7 @@ export default function AuthModal({ initialTab, onClose }: Props) {
         </button>
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#c084fc] via-[#e879f9] to-[#818cf8] bg-clip-text text-transparent">BioServe</h1>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#c084fc] via-[#e879f9] to-[#818cf8] bg-clip-text text-transparent">ServeAnalyzer</h1>
           <p className="text-slate-500 text-base mt-1.5">Análisis biomecánico de saques</p>
         </div>
 

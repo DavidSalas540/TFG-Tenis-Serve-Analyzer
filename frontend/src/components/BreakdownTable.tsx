@@ -31,7 +31,7 @@ const LEVEL_NAMES: Record<number, string> = {
 }
 
 function ScoreBar({ score }: { score: number }) {
-  const color = score >= 8 ? '#10b981' : score >= 5 ? '#f59e0b' : '#ef4444'
+  const color = score >= 7 ? '#10b981' : score >= 4 ? '#f59e0b' : '#ef4444'
   return (
     <div className="w-full h-2 rounded-full bg-[#1a0a35]">
       <div className="h-2 rounded-full" style={{ width: `${score * 10}%`, backgroundColor: color }} />

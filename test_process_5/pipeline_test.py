@@ -41,7 +41,7 @@ from quality_checks import validate_knee_integrity
 from feedback_classifier import classify_serve, print_report
 
 # ─── Config ──────────────────────────────────────────────────────────────────
-INPUT_VIDEO = Path(r"C:\Users\david\Downloads\videoOficial.mp4")
+INPUT_VIDEO = Path(r"D:\desk\RawData\Slice\Platform\130.mp4")
 OUTPUT_DIR  = Path(__file__).parent
 MODELS_DIR  = TFG_DIR / 'model_ai_process_4'
 
@@ -118,7 +118,7 @@ def extract_metrics(df: pd.DataFrame, video_path: Path) -> dict | None:
     if effect_data is None:
         print("  WARNING: Effect metrics failed validation. Analysis may be incomplete.")
 
-    non_dominant_arm_angle = get_non_dominant_arm_angle(df, min_f, target_f, video_path)
+    non_dominant_arm_angle = get_non_dominant_arm_angle(df, min_f, target_f)
     hip_drive              = get_hip_drive(df, start_f, min_f, hip_width)
     shoulder_rotation      = get_shoulder_rotation(df, min_f)
     trunk_arch             = get_trunk_arch(df, target_f, hip_width)

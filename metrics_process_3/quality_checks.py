@@ -54,10 +54,7 @@ TRUNK_ARCH_MAX         = 8.0
 
 
 def validate_effect_metrics(effect_data):
-    """
-    Validates jump, lateral_offset and arm_extension against plausible ranges.
-    Returns (True, "") on success, (False, reason) on failure.
-    """
+
     if effect_data['jump'] is not None:
         if not (JUMP_MIN <= effect_data['jump'] <= JUMP_MAX):
             return False, f"Unrealistic jump: {effect_data['jump']}"
@@ -74,11 +71,7 @@ def validate_effect_metrics(effect_data):
 
 
 def validate_knee_integrity(angles, min_f, csv_path):
-    """
-    Discards the video if the knee angle at maximum flexion is below KNEE_ANGLE_MIN.
-    An angle this small is anatomically impossible and indicates tracking failure.
-    Returns bool.
-    """
+
     if angles[min_f] < KNEE_ANGLE_MIN:
         print(f"Discarded {csv_path.name}: impossible knee angle {round(angles[min_f], 2)}°")
         return False
@@ -86,12 +79,7 @@ def validate_knee_integrity(angles, min_f, csv_path):
 
 
 def validate_non_dominant_arm_angle(angle, csv_path):
-    """
-    Discards the video if the non-dominant arm angle at trophy position is outside
-    [NON_DOM_ARM_MIN, NON_DOM_ARM_MAX]. Values below 160° indicate poor technique
-    or a detection error — both corrupt the training signal.
-    Returns bool.
-    """
+
     if not (NON_DOM_ARM_MIN <= angle <= NON_DOM_ARM_MAX):
         print(f"Discarded {csv_path.name}: non-dominant arm angle {angle}° "
               f"out of range [{NON_DOM_ARM_MIN}, {NON_DOM_ARM_MAX}]")
@@ -100,11 +88,7 @@ def validate_non_dominant_arm_angle(angle, csv_path):
 
 
 def validate_hip_drive(hip_drive, csv_path):
-    """
-    Discards the video if hip drive is negative (hip moved backwards during loading).
-    A negative value is biomechanically impossible and signals a MediaPipe glitch.
-    Returns bool.
-    """
+
     if hip_drive < HIP_DRIVE_MIN:
         print(f"Discarded {csv_path.name}: negative hip drive ({hip_drive})")
         return False
@@ -112,12 +96,7 @@ def validate_hip_drive(hip_drive, csv_path):
 
 
 def validate_shoulder_rotation(rotation, csv_path):
-    """
-    Discards the video if the absolute shoulder rotation exceeds SHOULDER_ROTATION_MAX.
-    Values beyond ±90° are anatomically impossible in a serve and indicate that
-    MediaPipe misplaced a shoulder or hip joint.
-    Returns bool.
-    """
+
     if abs(rotation) > SHOULDER_ROTATION_MAX:
         print(f"Discarded {csv_path.name}: impossible shoulder rotation ({rotation}°)")
         return False
@@ -125,11 +104,7 @@ def validate_shoulder_rotation(rotation, csv_path):
 
 
 def validate_trunk_arch(arch, csv_path):
-    """
-    Discards the video if trunk arch exceeds TRUNK_ARCH_MAX hip widths.
-    A value above 8 HW is physically impossible and indicates a tracking error.
-    Returns bool.
-    """
+
     if arch > TRUNK_ARCH_MAX:
         print(f"Discarded {csv_path.name}: impossible trunk arch ({arch} HW)")
         return False

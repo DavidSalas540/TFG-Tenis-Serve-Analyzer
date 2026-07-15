@@ -8,7 +8,7 @@ const LEVELS = [
     { n: 1, name: 'Iniciación',  color: '#6366f1', glow: 'rgba(99,102,241,0.7)',   desc: 'Aprende a colocar correctamente el brazo dominante y a lanzar la pelota.' },
     { n: 2, name: 'Básico',      color: '#8b5cf6', glow: 'rgba(139,92,246,0.7)',   desc: 'Añade la fase de carga con flexión de rodillas para generar potencia.' },
     { n: 3, name: 'Intermedio',  color: '#a855f7', glow: 'rgba(168,85,247,0.7)',   desc: 'Incorpora el impulso de caderas y el arco del tronco para mayor explosividad.' },
-    { n: 4, name: 'Avanzado',    color: '#c026d3', glow: 'rgba(192,38,211,0.7)',   desc: 'Domina la rotación de hombros y el factor-X para maximizar la velocidad.' },
+    { n: 4, name: 'Avanzado',    color: '#c026d3', glow: 'rgba(192,38,211,0.7)',   desc: 'Domina la rotación de hombros para maximizar la velocidad.' },
     { n: 5, name: 'Competición', color: '#f59e0b', glow: 'rgba(245,158,11,0.75)',  desc: 'Análisis completo: todas las métricas, incluido el despegue y el salto.' },
 ]
 
@@ -18,7 +18,7 @@ const METRICS = [
     { key: 'knee_loading',      name: 'Carga de Rodillas',     desc: 'Flexión de rodillas en la fase de carga',  unlockLevel: 2 },
     { key: 'hip_drive',         name: 'Impulso de Caderas',    desc: 'Proyección de caderas hacia la red',       unlockLevel: 3 },
     { key: 'trunk_arch',        name: 'Arco de Tronco',        desc: 'Forma de arco del cuerpo en el impacto',   unlockLevel: 3 },
-    { key: 'shoulder_rotation', name: 'Rotación de Hombros',   desc: 'Factor‑X: separación hombros / caderas',   unlockLevel: 4 },
+    { key: 'shoulder_rotation', name: 'Rotación de Hombros',   desc: 'El giro que hace el hombro respecto a las caderas', unlockLevel: 4 },
     { key: 'jump',              name: 'Despegue / Salto',      desc: 'Altura de salto normalizada por cadera',   unlockLevel: 5 },
 ]
 

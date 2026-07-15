@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+# pyrefly: ignore [missing-module-attribute]
 from config import FOLDER_CSVS, OUTPUT_DATASET
 from features_extractor import (
     calculate_knee_frames,
@@ -31,21 +32,24 @@ def process_single_csv(csv_path):
         start_f, min_f, max_f, target_f, knee_angles = calculate_knee_frames(df)
         if not validate_knee_integrity(knee_angles, min_f, csv_path):
             return None
-        if any(np.isnan(knee_angles[f]) for f in [start_f, min_f, target_f]):
+        if any(np.isnan(knee_angles[f]) for f in [start_f, min_f, max_f, target_f]):
             print(f"Discarded {csv_path.name}: NaN in key frame angles (tracking gap).")
             return None
 
-        hip_width   = get_hip_width(df, start_f)
         stance_data = calculate_stance_metrics(df, start_f, target_f)
-        effect_data = calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path)
+
+        # Reference hip width at start_f (upright, stable) — normalization for effect and feedback metrics.
+        # Stance metrics use their own hip_width at target_f, computed internally.
+        hip_width_ref = get_hip_width(df, start_f)
+        effect_data   = calculate_effect_metrics(df, start_f, max_f, hip_width_ref, csv_path)
         if effect_data is None:
             return None
 
-        non_dominant_arm_angle = get_non_dominant_arm_angle(df, min_f, target_f, csv_path)
+        non_dominant_arm_angle = get_non_dominant_arm_angle(df, min_f, target_f)
         if not validate_non_dominant_arm_angle(non_dominant_arm_angle, csv_path):
             return None
         
-        hip_drive         = get_hip_drive(df, start_f, min_f, hip_width)
+        hip_drive = get_hip_drive(df, start_f, min_f, hip_width_ref)
         if not validate_hip_drive(hip_drive, csv_path):
             return None
 
@@ -53,7 +57,7 @@ def process_single_csv(csv_path):
         if not validate_shoulder_rotation(shoulder_rotation, csv_path):
             return None
 
-        trunk_arch = get_trunk_arch(df, target_f, hip_width)
+        trunk_arch = get_trunk_arch(df, target_f, hip_width_ref)
         if not validate_trunk_arch(trunk_arch, csv_path):
             return None
 

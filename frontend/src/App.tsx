@@ -11,6 +11,7 @@ import HistoryPage from './components/HistoryPage'
 import AnalysisDetail from './components/AnalysisDetail'
 import CollectionsPage from './components/CollectionsPage'
 import LevelsPage from './components/LevelsPage'
+import LevelsModal from './components/LevelsModal'
 import SettingsModal from './components/SettingsModal'
 import { analyzeVideo, saveAnalysis, getUserProfile } from './api/client'
 import type { AnalysisResult, SavedAnalysis, UserProfile } from './api/client'
@@ -27,10 +28,10 @@ interface VideoCanvasProps {
 
 function VideoCanvas({ src, canvasFilter, opacity = 0.45 }: VideoCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const videoRef  = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
-    const video  = videoRef.current
+    const video = videoRef.current
     const canvas = canvasRef.current
     if (!video || !canvas) return
     const ctx = canvas.getContext('2d')
@@ -41,7 +42,7 @@ function VideoCanvas({ src, canvasFilter, opacity = 0.45 }: VideoCanvasProps) {
       if (video.readyState >= 2) ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       animId = requestAnimationFrame(draw)
     }
-    video.play().catch(() => {})
+    video.play().catch(() => { })
     animId = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(animId)
   }, [src])
@@ -66,7 +67,7 @@ function VideoCanvas({ src, canvasFilter, opacity = 0.45 }: VideoCanvasProps) {
 
 function TypewriterText() {
   const [displayed, setDisplayed] = useState('')
-  const [deleting, setDeleting]   = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const speed = deleting ? 40 : 80
@@ -86,8 +87,8 @@ function TypewriterText() {
 
   return (
     <div className="relative flex items-center justify-center h-[calc(100vh-80px)] overflow-hidden">
-      <VideoCanvas src="/bg-serve.mp4" canvasFilter="blur(4px) brightness(0.38) hue-rotate(280deg) saturate(2.2)" opacity={0.5} />
-      <div className="fixed inset-0 bg-gradient-to-b from-[#0d1117] via-transparent to-[#0d1117] pointer-events-none" style={{ zIndex: 1 }} />
+      <VideoCanvas src="/bg-serve.mp4" canvasFilter="blur(3px) brightness(0.75) hue-rotate(280deg) saturate(2.2)" opacity={0.75} />
+      <div className="fixed inset-0 bg-gradient-to-b from-[#0d1117]/70 via-transparent to-[#0d1117]/70 pointer-events-none" style={{ zIndex: 1 }} />
       <p className="relative text-2xl sm:text-4xl font-bold text-center max-w-2xl mx-auto px-6 leading-relaxed" style={{ zIndex: 2 }}>
         <span className="bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent">
           {displayed}
@@ -105,23 +106,24 @@ function TypewriterText() {
 type View = 'home' | 'history' | 'detail' | 'collections' | 'levels'
 
 function App() {
-  const [user, setUser]               = useState<User | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [authLoading, setAuthLoading] = useState(true)
   const isDarkMode = true
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [result, setResult]           = useState<AnalysisResult | null>(null)
-  const [error, setError]             = useState<string | null>(null)
-  const [authModal, setAuthModal]     = useState<'login' | 'register' | null>(null)
+  const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [authModal, setAuthModal] = useState<'login' | 'register' | null>(null)
+  const [levelsModalOpen, setLevelsModalOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [view, setView]               = useState<View>('home')
+  const [view, setView] = useState<View>('home')
   const [selectedAnalysis, setSelectedAnalysis] = useState<SavedAnalysis | null>(null)
-  const [previousView, setPreviousView]         = useState<View>('history')
-  const [profile, setProfile]                   = useState<UserProfile | null>(null)
+  const [previousView, setPreviousView] = useState<View>('history')
+  const [profile, setProfile] = useState<UserProfile | null>(null)
 
   const profileMenuRef = useRef<HTMLDivElement>(null)
-  const accentColor    = '#7c3aed'
+  const accentColor = '#7c3aed'
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -138,7 +140,7 @@ function App() {
   }, [])
 
   const isRestricted = profile &&
-    (profile.sexo === 'Mujer' || profile.mano_dominante === 'Izquierda')
+    (profile.sexo === 'Mujer' || profile.sexo === 'Prefiero no decirlo' || profile.mano_dominante === 'Izquierda')
 
   // Cierra el menú de perfil si se hace clic fuera
   useEffect(() => {
@@ -168,7 +170,7 @@ function App() {
       const data = await analyzeVideo(file, nivel)
       setResult(data)
       if (user) {
-        saveAnalysis(user.uid, file.name, data).catch(() => {})
+        saveAnalysis(user.uid, file.name, data).catch(() => { })
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Error al analizar el vídeo.')
@@ -206,14 +208,15 @@ function App() {
         <>
           <VideoCanvas
             src="/bg-logged.mp4"
-            canvasFilter="blur(5px) brightness(0.22) saturate(1.4)"
-            opacity={0.6}
+            canvasFilter="blur(4px) brightness(0.55) saturate(1.4)"
+            opacity={0.75}
           />
         </>
       )}
 
       {/* Modales */}
       {authModal && <AuthModal initialTab={authModal} onClose={() => setAuthModal(null)} />}
+      {levelsModalOpen && <LevelsModal onClose={() => setLevelsModalOpen(false)} />}
       {settingsOpen && user && (
         <SettingsModal
           uid={user.uid}
@@ -248,8 +251,8 @@ function App() {
               )}
               {/* Logo → vuelve al inicio */}
               <button onClick={handleGoHome} className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-                <img src={logoImg} alt="BioServe logo" className="w-9 h-9 object-contain" style={{ filter: 'hue-rotate(160deg) saturate(1.5) brightness(1.1)' }} />
-                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#c084fc] via-[#e879f9] to-[#818cf8] bg-clip-text text-transparent">BioServe</h1>
+                <img src={logoImg} alt="ServeAnalyzer logo" className="w-9 h-9 object-contain" style={{ filter: 'hue-rotate(160deg) saturate(1.5) brightness(1.1)' }} />
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-[#c084fc] via-[#e879f9] to-[#818cf8] bg-clip-text text-transparent">ServeAnalyzer</h1>
               </button>
             </div>
 
@@ -257,6 +260,10 @@ function App() {
             <div className="flex items-center space-x-3">
               {!user ? (
                 <>
+                  <button onClick={() => setLevelsModalOpen(true)}
+                    className="px-5 py-2.5 rounded-lg font-medium text-base transition-all hover:opacity-90 text-[#e9d5ff] hover:text-[#c084fc]">
+                    Ver niveles
+                  </button>
                   <button onClick={() => setAuthModal('register')}
                     className="px-5 py-2.5 rounded-lg font-medium text-base transition-all hover:opacity-90 text-[#c084fc] border border-[#7c3aed]/70 hover:border-[#c084fc] bg-transparent">
                     Crear cuenta
@@ -346,10 +353,12 @@ function App() {
 
         {user && view === 'home' && isRestricted && (
           <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
-            <div className="text-center max-w-lg mx-auto px-6">
-              <div className="text-6xl mb-6">🎾</div>
-              <h2 className="text-2xl font-bold mb-4">Lo sentimos</h2>
-              <p className={`text-lg leading-relaxed ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <div className="text-center max-w-2xl mx-auto px-10 py-12 rounded-2xl bg-[#0d0520]/75 border border-[#3b0764]/50 backdrop-blur-sm">
+              <h2 className="text-6xl lg:text-8xl font-black mb-10 tracking-tight bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                style={{ filter: 'drop-shadow(0 0 28px rgba(192,132,252,0.8))' }}>
+                Lo sentimos
+              </h2>
+              <p className="text-lg leading-relaxed text-white font-medium">
                 En estas primeras versiones el modelo no está capacitado para analizar a usuarios zurdos
                 o jugadoras femeninas. La siguiente versión tiene como objetivo solventar este inconveniente.
               </p>
@@ -382,9 +391,9 @@ function App() {
 
             {!isAnalyzing && error && (
               <div className="flex items-center justify-center min-h-[calc(100vh-180px)]">
-                <div className="text-center">
-                  <p className="text-red-400 text-lg mb-6">{error}</p>
-                  <button onClick={handleReset} className="px-6 py-3 rounded-lg font-medium text-white"
+                <div className="text-center max-w-md mx-auto px-10 py-10 rounded-2xl bg-[#0d0520]/80 border border-[#3b0764]/50 backdrop-blur-sm">
+                  <p className="text-red-400 font-semibold text-xl mb-6">{error}</p>
+                  <button onClick={handleReset} className="px-6 py-3 rounded-lg font-semibold text-white transition-all hover:opacity-90"
                     style={{ backgroundColor: accentColor }}>
                     Intentar de nuevo
                   </button>
@@ -395,53 +404,53 @@ function App() {
             {!isAnalyzing && !result && !error && (
               <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-center min-h-[calc(100vh-80px)] gap-8 py-10 lg:py-0 lg:-mt-20 lg:pr-16">
 
-                  {/* ── Hero — centrado ── */}
-                  <div className="flex flex-col items-center text-center w-full">
-                    <div className="inline-flex items-center justify-center w-36 h-36 mb-8 rounded-full"
-                      style={{ backgroundColor: `${accentColor}15`, border: `2px solid ${accentColor}` }}>
-                      <img src={logoImg} alt="logo" className="w-28 h-28 object-contain" style={{ filter: 'hue-rotate(160deg) saturate(1.5) brightness(1.1)' }} />
-                    </div>
-                    <h2 className="text-5xl lg:text-7xl font-black mb-4 tracking-tight bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                      style={{ filter: 'drop-shadow(0 0 28px rgba(192,132,252,0.8))' }}>
-                      Analiza tu Saque
-                    </h2>
-                    <p className="mb-10 max-w-sm text-lg text-white font-medium">
-                      Obtén análisis detallado de tu técnica de tenis con inteligencia artificial
-                    </p>
-                    <label style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}
-                      className="inline-flex items-center space-x-3 px-8 py-4 text-white font-bold text-lg rounded-lg cursor-pointer transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30">
-                      <Upload className="w-5 h-5" />
-                      <span>Subir Vídeo</span>
-                      <input type="file" accept="video/*" onChange={handleFileUpload} className="hidden" />
-                    </label>
+                {/* ── Hero — centrado ── */}
+                <div className="flex flex-col items-center text-center w-full">
+                  <div className="inline-flex items-center justify-center w-36 h-36 mb-8 rounded-full"
+                    style={{ backgroundColor: `${accentColor}15`, border: `2px solid ${accentColor}` }}>
+                    <img src={logoImg} alt="logo" className="w-28 h-28 object-contain" style={{ filter: 'hue-rotate(160deg) saturate(1.5) brightness(1.1)' }} />
                   </div>
+                  <h2 className="text-5xl lg:text-7xl font-black mb-4 tracking-tight bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                    style={{ filter: 'drop-shadow(0 0 28px rgba(192,132,252,0.8))' }}>
+                    Analiza tu Saque
+                  </h2>
+                  <p className="mb-10 max-w-sm text-lg text-white font-medium">
+                    Obtén análisis detallado de tu técnica de tenis con inteligencia artificial
+                  </p>
+                  <label style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}
+                    className="inline-flex items-center space-x-3 px-8 py-4 text-white font-bold text-lg rounded-lg cursor-pointer transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30">
+                    <Upload className="w-5 h-5" />
+                    <span>Subir Vídeo</span>
+                    <input type="file" accept="video/*" onChange={handleFileUpload} className="hidden" />
+                  </label>
+                </div>
 
-                  {/* ── Tips — derecha en desktop, abajo en móvil ── */}
-                  <div className="rounded-2xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm p-6 w-full lg:shrink-0 lg:mt-32" style={{ maxWidth: '420px', margin: '0 auto' }}>
-                    <h3 className="text-base font-black mb-5 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                      style={{ filter: 'drop-shadow(0 0 10px rgba(192,132,252,0.4))' }}>
-                      Sugerencias para mejores Resultados
-                    </h3>
-                    <ul className="space-y-3 mb-5">
-                      {[
-                        'Grábate desde una altura media (aprox. a la altura del pecho)',
-                        'Coloca la cámara detrás del jugador, con perspectiva desde la derecha',
-                        'Cuanta mayor iluminación tengas, mejor será el análisis',
-                      ].map(text => (
-                        <li key={text} className="flex items-start gap-3">
-                          <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#c084fc] shrink-0" />
-                          <p className="text-[#e9d5ff]/90 text-sm leading-relaxed">{text}</p>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="text-xs text-[#c084fc]/60 mb-2 font-medium">Ejemplo de ángulo</p>
-                    <img
-                      src="/example-angle.png"
-                      alt="Ángulo correcto de grabación"
-                      className="rounded-xl border border-[#3b0764]/50 block mx-auto"
-                      style={{ maxHeight: '260px', maxWidth: '100%', objectFit: 'contain', display: 'block' }}
-                    />
-                  </div>
+                {/* ── Tips — derecha en desktop, abajo en móvil ── */}
+                <div className="rounded-2xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm p-6 w-full lg:shrink-0 lg:mt-32" style={{ maxWidth: '420px', margin: '0 auto' }}>
+                  <h3 className="text-base font-black mb-5 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                    style={{ filter: 'drop-shadow(0 0 10px rgba(192,132,252,0.4))' }}>
+                    Sugerencias para mejores Resultados
+                  </h3>
+                  <ul className="space-y-3 mb-5">
+                    {[
+                      'Grábate desde una altura media (aprox. a la altura del pecho)',
+                      'Coloca la cámara detrás del jugador, con perspectiva desde la derecha',
+                      'Cuanta mayor iluminación tengas, mejor será el análisis',
+                    ].map(text => (
+                      <li key={text} className="flex items-start gap-3">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#c084fc] shrink-0" />
+                        <p className="text-[#e9d5ff]/90 text-sm leading-relaxed">{text}</p>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-xs text-[#c084fc]/60 mb-2 font-medium">Ejemplo de ángulo</p>
+                  <img
+                    src="/example-angle.png"
+                    alt="Ángulo correcto de grabación"
+                    className="rounded-xl border border-[#3b0764]/50 block mx-auto"
+                    style={{ maxHeight: '260px', maxWidth: '100%', objectFit: 'contain', display: 'block' }}
+                  />
+                </div>
 
               </div>
             )}

@@ -127,7 +127,7 @@ def analyze(video_path: Path, nivel: int = 5) -> dict:
             'knee_target':            round(knee_angles[target_f], 2),
             **stance_data,
             **(effect_data or {}),
-            'non_dominant_arm_angle': get_non_dominant_arm_angle(df_clean, min_f, target_f, mp4_path),
+            'non_dominant_arm_angle': get_non_dominant_arm_angle(df_clean, min_f, target_f),
             'hip_drive':              get_hip_drive(df_clean, start_f, min_f, hip_width),
             'shoulder_rotation':      get_shoulder_rotation(df_clean, min_f),
             'trunk_arch':             get_trunk_arch(df_clean, target_f, hip_width),
@@ -162,6 +162,7 @@ def analyze(video_path: Path, nivel: int = 5) -> dict:
             'grade':     feedback['grade'],
             'breakdown': feedback['breakdown'],
             'video_url': f'/api/video/{final_name}',
+            'nivel':     nivel,
         }
 
         

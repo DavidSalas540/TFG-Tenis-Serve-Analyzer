@@ -10,9 +10,10 @@ REFINE_WINDOW     = 10     # local window (frames) to refine the minimum frame
 START_SEARCH_BACK = 150    # frames to search backwards for the upright start position
 TARGET_FACTOR     = 0.325  # 32.5% of min→max arc = maximum inertia point before takeoff
 
+"""Computes the left knee angle for every frame in the DataFrame."""
 
 def get_knee_angles_series(df):
-    """Computes the left knee angle for every frame in the DataFrame."""
+
     return [calculate_angle(
         [df.loc[i, 'LEFT_HIP_x'],   df.loc[i, 'LEFT_HIP_y']],
         [df.loc[i, 'LEFT_KNEE_x'],  df.loc[i, 'LEFT_KNEE_y']],
@@ -20,15 +21,18 @@ def get_knee_angles_series(df):
     ) for i in range(len(df))]
 
 
-def detect_serve_phases(angles, max_dist_frames=MAX_PHASE_FRAMES):
-    """
+"""
     Identifies 4 key frames of a tennis serve from the knee angle trajectory:
       start    — upright position before loading
       best_min — maximum knee flexion (loading phase)
       best_max — maximum knee extension (takeoff)
       target   — 32.5% of the min→max arc (maximum inertia point)
     Returns (start, best_min, best_max, target).
-    """
+"""
+
+    
+def detect_serve_phases(angles, max_dist_frames=MAX_PHASE_FRAMES):
+   
     data = np.array(angles)
 
     peaks,   _ = find_peaks(data,  height=PEAK_MIN_HEIGHT,   distance=PEAK_MIN_DISTANCE)
@@ -57,9 +61,10 @@ def detect_serve_phases(angles, max_dist_frames=MAX_PHASE_FRAMES):
 
     return start, best_min, best_max, target
 
-
+"""Extracts knee angles from the DataFrame and detects the 4 serve phases."""
 def calculate_knee_frames(df):
-    """Extracts knee angles from the DataFrame and detects the 4 serve phases."""
+    
     knee_angles = get_knee_angles_series(df)
     start_f, min_f, max_f, target_f = detect_serve_phases(knee_angles)
     return start_f, min_f, max_f, target_f, knee_angles
+# pyrefly: ignore [parse-error]

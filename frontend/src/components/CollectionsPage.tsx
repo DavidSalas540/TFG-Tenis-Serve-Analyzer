@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Pencil, Trash2, ArrowLeft, FolderOpen, X, Check, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, ArrowLeft, FolderOpen, X, Check, Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import {
     getUserCollections, createCollection, renameCollection,
@@ -42,6 +42,8 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
     const [modalDate, setModalDate]         = useState('')
     const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set())
     const [addingIds, setAddingIds]         = useState(false)
+    const [detailPage, setDetailPage]       = useState(1)
+    const PAGE_SIZE = 10
 
     const load = (keepLoading = false) => {
         if (!keepLoading) setLoading(true)
@@ -133,86 +135,111 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
 
     // ── Vista detalle de una colección ──
     if (selected) {
-        const items = analysesInCollection(selected)
+        const items       = analysesInCollection(selected)
+        const totalPages  = Math.max(1, Math.ceil(items.length / PAGE_SIZE))
+        const pageSafe    = Math.min(detailPage, totalPages)
+        const pageItems   = items.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE)
         return (
             <div className="max-w-3xl mx-auto py-8 px-4">
-                <button onClick={() => setSelected(null)}
-                    className="flex items-center space-x-2 mb-6 text-sm font-medium text-[#c084fc]/70 hover:text-[#c084fc] transition-colors">
-                    <ArrowLeft className="w-4 h-4" />
-                    <span>Volver a colecciones</span>
-                </button>
+                <div className="rounded-2xl bg-[#0d0520]/75 border border-[#3b0764]/50 backdrop-blur-sm p-6 mb-6">
+                    <button onClick={() => setSelected(null)}
+                        className="flex items-center space-x-2 mb-6 text-sm font-medium text-[#c084fc]/70 hover:text-[#c084fc] transition-colors">
+                        <ArrowLeft className="w-4 h-4" />
+                        <span>Volver a colecciones</span>
+                    </button>
 
-                <div className="flex items-center justify-between mb-6">
-                    {renaming === selected.id ? (
+                    <div className="flex items-center justify-between">
+                        {renaming === selected.id ? (
+                            <div className="flex items-center gap-2">
+                                <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && handleRename(selected.id)}
+                                    className={inputClass} />
+                                <button onClick={() => handleRename(selected.id)}
+                                    className="p-2 rounded-lg bg-[#7c3aed]/30 hover:bg-[#7c3aed]/50 text-[#c084fc] transition-colors">
+                                    <Check className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setRenaming(null)}
+                                    className="p-2 rounded-lg text-slate-500 hover:text-slate-300 transition-colors">
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <h2 className="text-3xl font-black bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                                style={{ filter: 'drop-shadow(0 0 16px rgba(192,132,252,0.5))' }}>
+                                {selected.name}
+                            </h2>
+                        )}
                         <div className="flex items-center gap-2">
-                            <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleRename(selected.id)}
-                                className={inputClass} />
-                            <button onClick={() => handleRename(selected.id)}
-                                className="p-2 rounded-lg bg-[#7c3aed]/30 hover:bg-[#7c3aed]/50 text-[#c084fc] transition-colors">
-                                <Check className="w-4 h-4" />
+                            <button onClick={openAddModal}
+                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white font-semibold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
+                                style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
+                                <Plus className="w-4 h-4" />
+                                Añadir análisis
                             </button>
-                            <button onClick={() => setRenaming(null)}
-                                className="p-2 rounded-lg text-slate-500 hover:text-slate-300 transition-colors">
-                                <X className="w-4 h-4" />
+                            <button onClick={() => { setRenaming(selected.id); setRenameVal(selected.name) }}
+                                className="p-2 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                                <Pencil className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => setConfirmId(selected.id)}
+                                className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">
+                                <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
-                    ) : (
-                        <h2 className="text-3xl font-black bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                            style={{ filter: 'drop-shadow(0 0 16px rgba(192,132,252,0.5))' }}>
-                            {selected.name}
-                        </h2>
-                    )}
-                    <div className="flex items-center gap-2">
-                        <button onClick={openAddModal}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-white font-semibold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
-                            style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
-                            <Plus className="w-4 h-4" />
-                            Añadir análisis
-                        </button>
-                        <button onClick={() => { setRenaming(selected.id); setRenameVal(selected.name) }}
-                            className="p-2 rounded-lg text-[#c084fc]/60 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
-                            <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setConfirmId(selected.id)}
-                            className="p-2 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                            <Trash2 className="w-4 h-4" />
-                        </button>
                     </div>
+
+                    {items.length === 0 && (
+                        <p className="text-white font-bold text-xl text-center py-12">
+                            Esta colección está vacía. Añade análisis desde el Historial.
+                        </p>
+                    )}
                 </div>
 
-                {items.length === 0 ? (
-                    <p className="text-white font-bold text-xl text-center py-12">
-                        Esta colección está vacía. Añade análisis desde el Historial.
-                    </p>
-                ) : (
-                    <div className="space-y-3">
-                        {items.map(a => (
-                            <div key={a.id}
-                                className="w-full text-left rounded-xl border bg-[#0d0520]/70 border-[#3b0764]/50 hover:border-[#c084fc]/50 flex items-center justify-between transition-all">
-                                <button className="flex-1 text-left p-4 min-w-0" onClick={() => onSelectAnalysis(a)}>
-                                    <p className="font-semibold text-white">{a.custom_name}</p>
-                                    <p className="text-xs mt-0.5 text-slate-400">
-                                        {new Date(a.created_at).toLocaleDateString('es-ES', {
-                                            day: '2-digit', month: 'short', year: 'numeric'
-                                        })}
-                                        {' · '}{a.stance} · {a.effect}
-                                    </p>
-                                </button>
-                                <div className="flex items-center gap-4 pr-4 shrink-0">
-                                    <div className="text-right cursor-pointer" onClick={() => onSelectAnalysis(a)}>
-                                        <span className={`text-2xl font-bold ${GRADE_COLORS[a.grade]}`}>{a.grade}</span>
-                                        <p className="text-xs text-slate-400">{a.score}/100</p>
-                                    </div>
-                                    <button onClick={() => handleRemoveAnalysis(selected.id, a.id)}
-                                        title="Quitar de colección"
-                                        className="p-1.5 rounded-lg text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors">
-                                        <X className="w-4 h-4" />
+                {items.length === 0 ? null : (
+                    <>
+                        <div className="space-y-3">
+                            {pageItems.map(a => (
+                                <div key={a.id}
+                                    className="w-full text-left rounded-xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm hover:border-[#c084fc]/50 flex items-center justify-between transition-all">
+                                    <button className="flex-1 text-left p-4 min-w-0" onClick={() => onSelectAnalysis(a)}>
+                                        <p className="font-semibold text-white">{a.custom_name}</p>
+                                        <p className="text-xs mt-0.5 text-slate-300">
+                                            {new Date(a.created_at).toLocaleDateString('es-ES', {
+                                                day: '2-digit', month: 'short', year: 'numeric'
+                                            })}
+                                            {' · '}{a.stance} · {a.effect}
+                                        </p>
                                     </button>
+                                    <div className="flex items-center gap-4 pr-4 shrink-0">
+                                        <div className="text-right cursor-pointer" onClick={() => onSelectAnalysis(a)}>
+                                            <span className={`text-2xl font-bold ${GRADE_COLORS[a.grade]}`}>{a.grade}</span>
+                                            <p className="text-xs text-slate-300">{a.score}/100</p>
+                                        </div>
+                                        <button onClick={() => handleRemoveAnalysis(selected.id, a.id)}
+                                            title="Quitar de colección"
+                                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
+                            ))}
+                        </div>
+
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-center gap-4 mt-6">
+                                <button onClick={() => setDetailPage(p => Math.max(1, p - 1))} disabled={pageSafe === 1}
+                                    className="p-2 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                                    <ChevronLeft className="w-5 h-5" />
+                                </button>
+                                <span className="text-sm font-medium text-[#e9d5ff]">
+                                    Página {pageSafe} de {totalPages}
+                                </span>
+                                <button onClick={() => setDetailPage(p => Math.min(totalPages, p + 1))} disabled={pageSafe === totalPages}
+                                    className="p-2 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    </>
                 )}
 
                 {confirmId && (
@@ -229,11 +256,12 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
 
                             {/* Header */}
                             <div className="flex items-center justify-between px-6 py-5 border-b border-[#3b0764]/40 shrink-0">
-                                <h3 className="text-lg font-bold bg-gradient-to-r from-[#c084fc] to-[#818cf8] bg-clip-text text-transparent">
+                                <h3 className="text-lg font-bold bg-gradient-to-r from-[#c084fc] to-[#818cf8] bg-clip-text text-transparent"
+                                    style={{ filter: 'drop-shadow(0 0 12px rgba(192,132,252,0.5))' }}>
                                     Añadir análisis a "{selected.name}"
                                 </h3>
                                 <button onClick={() => setAddModalOpen(false)}
-                                    className="p-1.5 rounded-lg text-[#c084fc]/50 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                                    className="p-1.5 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
                                     <X className="w-5 h-5" />
                                 </button>
                             </div>
@@ -241,19 +269,19 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
                             {/* Filtros */}
                             <div className="flex gap-3 px-6 py-4 shrink-0">
                                 <div className="relative flex-1">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c084fc]" />
                                     <input type="text" placeholder="Buscar por nombre..."
                                         value={modalSearch} onChange={e => setModalSearch(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2.5 rounded-lg border bg-[#1a0a35]/90 border-[#7c3aed]/70 text-white placeholder-[#c084fc]/60 focus:outline-none focus:border-[#c084fc] text-sm" />
+                                        className="w-full pl-9 pr-4 py-2.5 rounded-lg border bg-[#1a0a35] border-[#7c3aed] text-white placeholder-[#c084fc]/70 focus:outline-none focus:border-[#c084fc] text-sm" />
                                 </div>
                                 <input type="date" value={modalDate} onChange={e => setModalDate(e.target.value)}
-                                    className="px-3 py-2.5 rounded-lg border bg-[#1a0a35]/90 border-[#7c3aed]/70 text-white focus:outline-none focus:border-[#c084fc] text-sm" />
+                                    className="px-3 py-2.5 rounded-lg border bg-[#1a0a35] border-[#7c3aed] text-white focus:outline-none focus:border-[#c084fc] text-sm [&::-webkit-calendar-picker-indicator]:invert" />
                             </div>
 
                             {/* Lista */}
                             <div className="flex-1 overflow-y-auto px-6 space-y-2 pb-4">
                                 {modalFiltered.length === 0 && (
-                                    <p className="text-slate-400 text-center py-8">No hay análisis que coincidan.</p>
+                                    <p className="text-slate-300 text-center py-8">No hay análisis que coincidan.</p>
                                 )}
                                 {modalFiltered.map(a => {
                                     const alreadyIn = selected.analysis_ids.includes(a.id)
@@ -277,7 +305,7 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
                                             {/* Info */}
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-semibold text-white text-sm truncate">{a.custom_name}</p>
-                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                <p className="text-xs text-slate-300 mt-0.5">
                                                     {new Date(a.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     {' · '}{a.stance} · {a.effect}
                                                 </p>
@@ -285,7 +313,7 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
                                             {/* Nota */}
                                             <div className="text-right shrink-0">
                                                 <span className={`text-xl font-bold ${GRADE_COLORS[a.grade]}`}>{a.grade}</span>
-                                                <p className="text-xs text-slate-400">{a.score}/100</p>
+                                                <p className="text-xs text-slate-300">{a.score}/100</p>
                                             </div>
                                         </button>
                                     )
@@ -294,16 +322,16 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
 
                             {/* Footer */}
                             <div className="flex items-center justify-between px-6 py-4 border-t border-[#3b0764]/40 shrink-0">
-                                <span className="text-sm text-[#c084fc]/70">
+                                <span className="text-sm text-[#c084fc]">
                                     {selectedIds.size} seleccionado{selectedIds.size !== 1 ? 's' : ''}
                                 </span>
                                 <div className="flex gap-3">
                                     <button onClick={() => setAddModalOpen(false)}
-                                        className="px-4 py-2 rounded-lg text-slate-400 hover:text-white text-sm transition-colors">
+                                        className="px-4 py-2 rounded-lg text-slate-300 hover:text-white text-sm transition-colors">
                                         Cancelar
                                     </button>
                                     <button onClick={handleConfirmAdd} disabled={selectedIds.size === 0 || addingIds}
-                                        className="px-5 py-2 rounded-lg text-white font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-40"
+                                        className="px-5 py-2 rounded-lg text-white font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-70"
                                         style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
                                         {addingIds ? 'Añadiendo...' : 'Añadir'}
                                     </button>
@@ -320,49 +348,51 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
     // ── Vista lista de colecciones ──
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
-            <div className="flex items-center justify-between mb-6">
-                <h2 className="text-4xl font-black bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                    style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.6))' }}>
-                    Colecciones
-                </h2>
-                <button onClick={() => setCreating(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
-                    style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
-                    <Plus className="w-4 h-4" />
-                    Nueva colección
-                </button>
-            </div>
-
-            {creating && (
-                <div className="mb-4 p-4 rounded-xl" style={{ backgroundColor: '#1a0845', border: '1px solid #7c3aed', boxShadow: '0 0 20px rgba(124,58,237,0.3)' }}>
-                    <div className="flex items-center gap-2">
-                        <input autoFocus placeholder="Nombre de la colección..."
-                            value={newName} onChange={e => setNewName(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                            className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none placeholder-[#c084fc]/50 font-medium"
-                            style={{ backgroundColor: '#2a0f5a', border: '1px solid #7c3aed' }} />
-                        <button onClick={handleCreate}
-                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
-                            style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
-                            <Check className="w-4 h-4" />
-                            Crear
-                        </button>
-                        <button onClick={() => { setCreating(false); setNewName(''); setCreateError('') }}
-                            className="p-2.5 rounded-lg transition-colors text-white font-bold"
-                            style={{ backgroundColor: '#2a0f5a', border: '1px solid #6b3fa0' }}>
-                            <X className="w-4 h-4" />
-                        </button>
-                    </div>
-                    {createError && <p className="mt-2 text-red-400 text-xs">{createError}</p>}
+            <div className="rounded-2xl bg-[#0d0520]/75 border border-[#3b0764]/50 backdrop-blur-sm p-6 mb-6">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-4xl font-black bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                        style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.6))' }}>
+                        Colecciones
+                    </h2>
+                    <button onClick={() => setCreating(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
+                        style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
+                        <Plus className="w-4 h-4" />
+                        Nueva colección
+                    </button>
                 </div>
-            )}
 
-            {collections.length === 0 && !creating && (
-                <p className="font-bold text-xl text-center py-12 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                   style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.8))' }}>
-                    Aún no tienes colecciones. Crea una con el botón de arriba.
-                </p>
-            )}
+                {creating && (
+                    <div className="mt-6 p-4 rounded-xl" style={{ backgroundColor: '#1a0845', border: '1px solid #7c3aed', boxShadow: '0 0 20px rgba(124,58,237,0.3)' }}>
+                        <div className="flex items-center gap-2">
+                            <input autoFocus placeholder="Nombre de la colección..."
+                                value={newName} onChange={e => setNewName(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleCreate()}
+                                className="flex-1 px-4 py-2.5 rounded-lg text-white text-sm focus:outline-none placeholder-[#c084fc]/50 font-medium"
+                                style={{ backgroundColor: '#2a0f5a', border: '1px solid #7c3aed' }} />
+                            <button onClick={handleCreate}
+                                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-white font-bold text-sm transition-all hover:opacity-90 hover:scale-105 shadow-lg shadow-[#7c3aed]/30"
+                                style={{ background: 'linear-gradient(135deg, #7c3aed, #c026d3)' }}>
+                                <Check className="w-4 h-4" />
+                                Crear
+                            </button>
+                            <button onClick={() => { setCreating(false); setNewName(''); setCreateError('') }}
+                                className="p-2.5 rounded-lg transition-colors text-white font-bold"
+                                style={{ backgroundColor: '#2a0f5a', border: '1px solid #6b3fa0' }}>
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                        {createError && <p className="mt-2 text-red-400 text-xs">{createError}</p>}
+                    </div>
+                )}
+
+                {collections.length === 0 && !creating && (
+                    <p className="font-bold text-xl text-center py-12 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                       style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.8))' }}>
+                        Aún no tienes colecciones. Crea una con el botón de arriba.
+                    </p>
+                )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
                 {collections.map(col => {
@@ -395,18 +425,18 @@ export default function CollectionsPage({ uid, onSelectAnalysis }: Props) {
                                     </div>
                                     <div className="flex items-center gap-1">
                                         <button onClick={() => { setRenaming(col.id); setRenameVal(col.name) }}
-                                            className="p-1.5 rounded-lg text-[#c084fc]/50 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                                            className="p-1.5 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
                                         <button onClick={() => setConfirmId(col.id)}
-                                            className="p-1.5 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">
                                             <Trash2 className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
                                 </div>
                             )}
 
-                            <button onClick={() => setSelected(col)}
+                            <button onClick={() => { setSelected(col); setDetailPage(1) }}
                                 className="flex items-center gap-2 text-sm font-medium text-[#c084fc]/70 hover:text-[#c084fc] transition-colors">
                                 <FolderOpen className="w-4 h-4" />
                                 <span>Abrir colección</span>

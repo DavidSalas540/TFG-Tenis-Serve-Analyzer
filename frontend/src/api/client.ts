@@ -39,7 +39,6 @@ export interface SavedAnalysis {
     grade:       string
     stance:      string
     effect:      string
-    video_url:   string | null
     nivel?:      number
     breakdown:   AnalysisResult['breakdown']
     created_at:  string
@@ -124,7 +123,6 @@ export async function saveAnalysis(
         grade:       result.grade,
         stance:      result.stance,
         effect:      result.effect,
-        video_url:   result.video_url ?? null,
         nivel:       result.nivel ?? 5,
         breakdown:   result.breakdown,
         created_at:  serverTimestamp(),

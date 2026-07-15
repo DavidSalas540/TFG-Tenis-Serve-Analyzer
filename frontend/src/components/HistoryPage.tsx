@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { Search, FolderPlus, Check, Pencil, Trash2, X } from 'lucide-react'
+import { Search, FolderPlus, Check, Pencil, Trash2, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import {
     getUserAnalyses, getUserCollections,
     addAnalysisToCollection, removeAnalysisFromCollection,
@@ -31,7 +31,9 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
     const [renamingId, setRenamingId]     = useState<string | null>(null)
     const [renameVal, setRenameVal]       = useState('')
     const [confirmId, setConfirmId]       = useState<string | null>(null)
+    const [page, setPage]                 = useState(1)
     const pickerRef                       = useRef<HTMLDivElement>(null)
+    const PAGE_SIZE = 10
 
     const loadAll = () => {
         Promise.all([getUserAnalyses(uid), getUserCollections(uid)])
@@ -91,40 +93,48 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
         return matchName && matchDate
     })
 
+    useEffect(() => { setPage(1) }, [search, dateFrom])
+
+    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+    const pageSafe    = Math.min(page, totalPages)
+    const pageItems   = filtered.slice((pageSafe - 1) * PAGE_SIZE, pageSafe * PAGE_SIZE)
+
     const inputClass = isDarkMode
         ? 'bg-[#1a0a35]/90 border-[#7c3aed]/70 text-white placeholder-[#c084fc]/60 focus:border-[#c084fc] font-medium'
         : 'bg-amber-50 border-stone-300 text-stone-900 placeholder-stone-400'
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
-            <h2 className="text-4xl font-black mb-6 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-              style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.6))' }}>
-              Historial de análisis
-            </h2>
+            <div className="rounded-2xl bg-[#0d0520]/75 border border-[#3b0764]/50 backdrop-blur-sm p-6 mb-6">
+                <h2 className="text-4xl font-black mb-6 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                  style={{ filter: 'drop-shadow(0 0 20px rgba(192,132,252,0.6))' }}>
+                  Historial de análisis
+                </h2>
 
-            {/* Filtros */}
-            <div className="flex gap-3 mb-6">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input type="text" placeholder="Buscar por nombre..."
-                        value={search} onChange={e => setSearch(e.target.value)}
-                        className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm focus:outline-none ${inputClass}`} />
+                {/* Filtros */}
+                <div className="flex gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#c084fc]" />
+                        <input type="text" placeholder="Buscar por nombre..."
+                            value={search} onChange={e => setSearch(e.target.value)}
+                            className={`w-full pl-9 pr-4 py-2.5 rounded-lg border text-sm focus:outline-none ${inputClass}`} />
+                    </div>
+                    <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                        className={`px-3 py-2.5 rounded-lg border text-sm focus:outline-none [&::-webkit-calendar-picker-indicator]:invert ${inputClass}`} />
                 </div>
-                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                    className={`px-3 py-2.5 rounded-lg border text-sm focus:outline-none ${inputClass}`} />
+
+                {loading && <p className="text-slate-300 text-center py-12">Cargando...</p>}
+
+                {!loading && filtered.length === 0 && (
+                    <p className="text-white font-bold text-xl text-center py-12">
+                        {analyses.length === 0 ? 'Aún no tienes análisis guardados.' : 'No hay resultados para ese filtro.'}
+                    </p>
+                )}
             </div>
 
-            {loading && <p className="text-slate-400 text-center py-12">Cargando...</p>}
-
-            {!loading && filtered.length === 0 && (
-                <p className="text-white font-bold text-xl text-center py-12">
-                    {analyses.length === 0 ? 'Aún no tienes análisis guardados.' : 'No hay resultados para ese filtro.'}
-                </p>
-            )}
-
             <div className="space-y-3" ref={pickerRef}>
-                {filtered.map(a => (
-                    <div key={a.id} className="rounded-xl border bg-[#0d0520]/70 border-[#3b0764]/50 hover:border-[#c084fc]/50 transition-all">
+                {pageItems.map(a => (
+                    <div key={a.id} className="rounded-xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm hover:border-[#c084fc]/50 transition-all">
 
                         {renamingId === a.id ? (
                             /* ── Modo edición nombre ── */
@@ -153,7 +163,7 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
                                 {/* Info clickable */}
                                 <button className="flex-1 text-left min-w-0" onClick={() => onSelect(a)}>
                                     <p className="font-semibold text-white truncate">{a.custom_name}</p>
-                                    <p className="text-xs mt-0.5 text-slate-400">
+                                    <p className="text-xs mt-0.5 text-slate-300">
                                         {new Date(a.created_at).toLocaleDateString('es-ES', {
                                             day: '2-digit', month: 'short', year: 'numeric'
                                         })}
@@ -164,14 +174,14 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
                                 {/* Nota */}
                                 <div className="text-right shrink-0 cursor-pointer" onClick={() => onSelect(a)}>
                                     <span className={`text-2xl font-bold ${GRADE_COLORS[a.grade]}`}>{a.grade}</span>
-                                    <p className="text-xs text-slate-400">{a.score}/100</p>
+                                    <p className="text-xs text-slate-300">{a.score}/100</p>
                                 </div>
 
                                 {/* Acciones */}
                                 <div className="flex items-center gap-1 shrink-0">
                                     {/* Renombrar */}
                                     <button onClick={() => handleRenameStart(a)} title="Renombrar"
-                                        className="p-1.5 rounded-lg text-[#c084fc]/50 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                                        className="p-1.5 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
                                         <Pencil className="w-3.5 h-3.5" />
                                     </button>
 
@@ -179,17 +189,17 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
                                     <div className="relative">
                                         <button onClick={() => setPickerOpen(pickerOpen === a.id ? null : a.id)}
                                             title="Añadir a colección"
-                                            className="p-1.5 rounded-lg text-[#c084fc]/50 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                                            className="p-1.5 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
                                             <FolderPlus className="w-3.5 h-3.5" />
                                         </button>
 
                                         {pickerOpen === a.id && (
                                             <div className="absolute right-0 top-8 z-50 w-52 rounded-xl border border-[#3b0764]/60 bg-[#0d0520] shadow-2xl shadow-[#7c3aed]/20 overflow-hidden">
-                                                <p className="px-4 py-2.5 text-xs font-semibold text-[#c084fc]/60 border-b border-[#3b0764]/40">
+                                                <p className="px-4 py-2.5 text-xs font-semibold text-[#c084fc] border-b border-[#3b0764]/40">
                                                     Guardar en colección
                                                 </p>
                                                 {collections.length === 0 ? (
-                                                    <p className="px-4 py-3 text-xs text-slate-500">No tienes colecciones aún.</p>
+                                                    <p className="px-4 py-3 text-xs text-slate-300">No tienes colecciones aún.</p>
                                                 ) : (
                                                     collections.map(col => {
                                                         const isIn = col.analysis_ids.includes(a.id)
@@ -209,7 +219,7 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
 
                                     {/* Eliminar */}
                                     <button onClick={() => setConfirmId(a.id)} title="Eliminar"
-                                        className="p-1.5 rounded-lg text-red-400/50 hover:text-red-400 hover:bg-red-500/10 transition-colors">
+                                        className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition-colors">
                                         <Trash2 className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
@@ -218,6 +228,22 @@ export default function HistoryPage({ uid, isDarkMode, onSelect }: Props) {
                     </div>
                 ))}
             </div>
+
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-4 mt-6">
+                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={pageSafe === 1}
+                        className="p-2 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <span className="text-sm font-medium text-[#e9d5ff]">
+                        Página {pageSafe} de {totalPages}
+                    </span>
+                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={pageSafe === totalPages}
+                        className="p-2 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors disabled:opacity-30 disabled:hover:bg-transparent">
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
+            )}
 
             {confirmId && (
                 <ConfirmModal

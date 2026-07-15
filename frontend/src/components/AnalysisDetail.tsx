@@ -1,6 +1,5 @@
 import { ArrowLeft } from 'lucide-react'
 import type { SavedAnalysis } from '../api/client'
-import { API_URL } from '../api/client'
 import BreakdownTable from './BreakdownTable'
 
 interface Props {
@@ -23,32 +22,34 @@ export default function AnalysisDetail({ analysis, onBack, backLabel = 'Volver a
     return (
         <div className="max-w-3xl mx-auto py-8 px-4">
 
-            {/* Volver */}
-            <button onClick={onBack} className="flex items-center space-x-2 mb-6 text-sm font-medium text-[#c084fc]/70 hover:text-[#c084fc] transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-                <span>{backLabel}</span>
-            </button>
+            <div className="rounded-2xl bg-[#0d0520]/75 border border-[#3b0764]/50 backdrop-blur-sm p-6 mb-6">
+                {/* Volver */}
+                <button onClick={onBack} className="flex items-center space-x-2 mb-6 text-sm font-medium text-[#c084fc]/70 hover:text-[#c084fc] transition-colors">
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>{backLabel}</span>
+                </button>
 
-            <h2 className="text-2xl font-black mb-1 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
-                style={{ filter: 'drop-shadow(0 0 12px rgba(192,132,252,0.5))' }}>
-                {analysis.custom_name}
-            </h2>
-            <p className="text-sm mb-6 text-[#c084fc]/60">
-                {new Date(analysis.created_at).toLocaleDateString('es-ES', {
-                    day: '2-digit', month: 'long', year: 'numeric'
-                })}
-            </p>
+                <h2 className="text-2xl font-black mb-1 bg-gradient-to-r from-[#c084fc] via-white to-[#818cf8] bg-clip-text text-transparent"
+                    style={{ filter: 'drop-shadow(0 0 12px rgba(192,132,252,0.5))' }}>
+                    {analysis.custom_name}
+                </h2>
+                <p className="text-sm text-[#c084fc]/60">
+                    {new Date(analysis.created_at).toLocaleDateString('es-ES', {
+                        day: '2-digit', month: 'long', year: 'numeric'
+                    })}
+                </p>
 
-            {/* Nivel */}
-            {analysis.nivel && (
-                <div className="flex items-center gap-2 mb-4">
-                    <span className="text-xs font-semibold text-[#c084fc]/60">Analizado como</span>
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold text-white border border-[#7c3aed]/60"
-                        style={{ background: 'linear-gradient(135deg, #7c3aed40, #c026d340)' }}>
-                        Nivel {analysis.nivel} · {(['Iniciación','Básico','Intermedio','Avanzado','Competición'])[analysis.nivel - 1]}
-                    </span>
-                </div>
-            )}
+                {/* Nivel */}
+                {analysis.nivel && (
+                    <div className="flex items-center gap-2 mt-4">
+                        <span className="text-xs font-semibold text-[#c084fc]/60">Analizado como</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-bold text-white border border-[#7c3aed]/60"
+                            style={{ background: 'linear-gradient(135deg, #7c3aed40, #c026d340)' }}>
+                            Nivel {analysis.nivel} · {(['Iniciación','Básico','Intermedio','Avanzado','Competición'])[analysis.nivel - 1]}
+                        </span>
+                    </div>
+                )}
+            </div>
 
             {/* Score + nota */}
             <div className="rounded-2xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm p-6 mb-6">
@@ -77,19 +78,6 @@ export default function AnalysisDetail({ analysis, onBack, backLabel = 'Volver a
                     </div>
                 </div>
             </div>
-
-            {/* Vídeo skeleton — disponible solo si el servidor sigue activo */}
-            {analysis.video_url && (
-                <div className="rounded-2xl border bg-[#0d0520]/80 border-[#3b0764]/60 backdrop-blur-sm p-6 mb-6">
-                    <p className="text-sm font-medium mb-3 text-[#c084fc]/80">Análisis de movimiento</p>
-                    <video
-                        src={`${API_URL}${analysis.video_url}`}
-                        controls
-                        className="w-full rounded-xl"
-                        style={{ maxHeight: '420px', backgroundColor: '#000' }}
-                    />
-                </div>
-            )}
 
             {/* Métricas */}
             <BreakdownTable breakdown={analysis.breakdown} isDarkMode={true} />

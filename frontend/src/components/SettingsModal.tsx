@@ -51,6 +51,7 @@ export default function SettingsModal({ uid, onClose, onSave }: Props) {
             })
             setSaved(true)
             onSave()
+            onClose()
         } catch {
             setError('Error al guardar. Inténtalo de nuevo.')
         } finally {
@@ -58,19 +59,19 @@ export default function SettingsModal({ uid, onClose, onSave }: Props) {
         }
     }
 
-    const inputClass = 'w-full px-4 py-3 rounded-lg bg-[#12082a] border border-[#3b0764]/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#c084fc] text-base transition-colors'
-    const labelClass = 'block text-sm font-medium text-[#c084fc]/70 mb-1.5'
+    const inputClass = 'w-full px-4 py-3 rounded-lg bg-[#1a0f3a] border border-[#3b0764]/90 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#c084fc] text-base transition-colors'
+    const labelClass = 'block text-sm font-medium text-[#c084fc] mb-1.5'
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-            <div className="bg-[#0d0520] border border-[#3b0764]/70 rounded-2xl w-full max-w-2xl mx-4 shadow-2xl shadow-[#7c3aed]/10 relative">
+            <div className="bg-[#150a30] border border-[#7c3aed]/60 rounded-2xl w-full max-w-2xl mx-4 shadow-2xl shadow-[#7c3aed]/20 relative">
 
-                <div className="flex items-center justify-between px-8 py-6 border-b border-[#3b0764]/40">
+                <div className="flex items-center justify-between px-8 py-6 border-b border-[#3b0764]/60">
                     <div>
                         <h2 className="text-xl font-bold bg-gradient-to-r from-[#c084fc] to-[#818cf8] bg-clip-text text-transparent">Configuración</h2>
-                        <p className="text-slate-500 text-base">Edita los datos de tu perfil</p>
+                        <p className="text-slate-400 text-base">Edita los datos de tu perfil</p>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-lg text-[#c084fc]/50 hover:text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
+                    <button onClick={onClose} className="p-1.5 rounded-lg text-[#c084fc] hover:bg-[#3b0764]/40 transition-colors">
                         <X className="w-5 h-5" />
                     </button>
                 </div>
@@ -117,10 +118,10 @@ export default function SettingsModal({ uid, onClose, onSave }: Props) {
                                                 className="w-full py-2 rounded-lg text-sm font-bold transition-all"
                                                 style={nivel === n
                                                     ? { background: 'linear-gradient(135deg, #7c3aed, #c026d3)', color: '#fff' }
-                                                    : { color: '#c084fc', border: '1px solid rgba(124,58,237,0.4)' }}>
+                                                    : { color: '#c084fc', border: '1px solid rgba(124,58,237,0.65)' }}>
                                                 {n}
                                             </button>
-                                            <span className="text-xs text-[#c084fc]/80 text-center leading-tight">{LEVEL_LABELS[n]}</span>
+                                            <span className="text-xs text-[#c084fc] text-center leading-tight">{LEVEL_LABELS[n]}</span>
                                         </div>
                                     ))}
                                 </div>

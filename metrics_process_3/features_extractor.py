@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-module-attribute]
 from event_detector import calculate_knee_frames
 from tennis_metrics import (
     get_hip_width, get_ankle_drag, get_ankles_distance,
@@ -24,30 +25,36 @@ def get_effect_label(video_id):
     return -1
 
 
-def calculate_stance_metrics(df, start_f, target_f):
-    """
+"""
     Returns a dict with ankle_drag, ankle_min_dist, and hip_tilt,
     all normalized by hip width at target_f.
-    """
+"""
+
+def calculate_stance_metrics(df, start_f, target_f):
+    
     hip_width      = get_hip_width(df, target_f)
     ankle_drag     = get_ankle_drag(df, start_f, target_f, hip_width)
+    # pyrefly: ignore [bad-specialization]
     min_dist       = min(get_ankles_distance(df, i) for i in range(start_f, target_f + 1))
     ankle_min_dist = min_dist      / hip_width if hip_width > 0 else 0
     hip_tilt       = abs(df.loc[target_f, 'LEFT_HIP_y'] - df.loc[target_f, 'RIGHT_HIP_y']) / hip_width if hip_width > 0 else 0
 
     return {
         "ankle_drag":     round(ankle_drag,     4),
+        # pyrefly: ignore [no-matching-overload]
         "ankle_min_dist": round(ankle_min_dist, 4),
         "hip_tilt":       round(hip_tilt,       4),
     }
 
-
-def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path, validate=True):
-    """
+"""
     Returns a dict with jump, lateral_offset, and arm_extension.
     validate=True  → training pipeline: returns None if quality checks fail.
     validate=False → backend: always returns the data, never discards.
-    """
+"""
+
+
+def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path, validate=True):
+    
     jump           = calculate_max_jump(df, start_f, max_f, hip_width)
     metrics_impact = extract_impact_metrics(df, start_f, max_f)
 
@@ -58,6 +65,7 @@ def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path, validate=T
         lateral_offset = arm_extension = None
 
     effect_data = {
+        # pyrefly: ignore [no-matching-overload]
         "jump":           round(jump, 4),
         "lateral_offset": lateral_offset,
         "arm_extension":  arm_extension,
@@ -72,11 +80,8 @@ def calculate_effect_metrics(df, start_f, max_f, hip_width, csv_path, validate=T
     return effect_data
 
 
-def get_non_dominant_arm_angle(df, min_f, target_f, csv_path, window_size=5):
-    """
-    Returns the maximum non-dominant arm angle in a ±window_size frame window
-    around min_f, clipped to [0, target_f].
-    """
+def get_non_dominant_arm_angle(df, min_f, target_f, window_size=5):
+
     df_clean     = df.iloc[:target_f + 1].copy().reset_index(drop=True)
     all_angles   = get_non_dominant_arm_angles(df_clean)
     start_win    = max(0, min_f - window_size)

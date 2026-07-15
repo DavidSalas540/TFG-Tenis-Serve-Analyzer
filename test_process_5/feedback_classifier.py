@@ -29,9 +29,9 @@ HIP_DRIVE_MODEST   = 2.0    # < modest → score 4
 HIP_DRIVE_GOOD     = 5.0    # < good → score 7
                              # ≥ 5 → aggressive → score 10
 
-JUMP_LOW       = 4
-JUMP_MODERATE  = 6.0
-JUMP_OPTIMAL   = 8.0
+JUMP_LOW       = 4.0    # < low  → score 1  (~4% del dataset)
+JUMP_MODERATE  = 7.0    # < mod  → score 4  (~20%)
+JUMP_OPTIMAL   = 11.0   # < opt  → score 7  (~45%)  |  ≥ 11 → agresivo → score 10 (~30%)
 
 SHOULDER_LOW      = 10.0   # abs < 10 → low X-factor → score 1
 SHOULDER_MODERATE = 25.0   # abs < 25 → moderate → score 4
@@ -42,8 +42,9 @@ ARM_VERY_BENT  = 150.0
 ARM_MODERATE   = 165.0
 ARM_GOOD       = 175.0
 
-NON_DOM_LOW    = 165.0   # < 165 → malo    → score 1
-NON_DOM_OPT    = 176.0   # < 176 → moderado → score 5  |  ≥ 176 → excelente → score 10
+NON_DOM_LOW    = 165.0   # < 165 → malo      → score 1  (~3%)
+NON_DOM_MED    = 170.0   # < 170 → moderado  → score 4  (~21%)
+NON_DOM_GOOD   = 176.0   # < 176 → bueno     → score 7  (~36%)  |  ≥ 176 → excelente → score 10 (~39%)
 
 TRUNK_LOW      = 1.0
 TRUNK_MODERATE = 2.0
@@ -78,6 +79,16 @@ LEVEL_NAMES = {
     3: 'Intermedio',
     4: 'Avanzado',
     5: 'Competición',
+}
+
+# Grade thresholds scale with level: beginners reach A/B with lower absolute scores.
+# At level 5 (Competition) the bar matches elite standards (A≥80, B≥65, C≥50).
+LEVEL_GRADES = {
+    1: {'A': 65, 'B': 50, 'C': 35},
+    2: {'A': 68, 'B': 53, 'C': 38},
+    3: {'A': 72, 'B': 57, 'C': 42},
+    4: {'A': 76, 'B': 61, 'C': 46},
+    5: {'A': 80, 'B': 65, 'C': 50},
 }
 
 _LOCKED = {
@@ -176,11 +187,17 @@ def classify_non_dominant_arm(angle):
             'score': 1,
             'tip': '¡El brazo no dominante de lanzamiento de bola (Toss) está por debajo del ideal! Mantenlo arriba hasta el golpe.',
         }
-    if angle < NON_DOM_OPT:
+    if angle < NON_DOM_MED:
         return {
             'category': 'Posición moderada',
-            'score': 5,
-            'tip': '¡¡El brazo no dominante de lanzamiento de bola (Toss) puede subir un poco más!',
+            'score': 4,
+            'tip': 'El brazo no dominante de lanzamiento de bola (Toss) puede subir bastante más. Intenta mantenerlo elevado durante toda la fase de carga.',
+        }
+    if angle < NON_DOM_GOOD:
+        return {
+            'category': 'Buena posición',
+            'score': 7,
+            'tip': '¡Buena elevación del brazo no dominante! Intenta mantenerlo un poco más arriba hasta el momento del golpe.',
         }
     return {
         'category': 'Posición correcta',
@@ -316,13 +333,14 @@ def classify_serve(
         for key in active if key in WEIGHTS
     )
     max_possible = sum(WEIGHTS[key] for key in active if key in WEIGHTS)
-    total_score  = round((weighted_sum / max_possible) * 100, 1) if max_possible else 0.0
+    total_score  = round((weighted_sum / max_possible) * 10, 1) if max_possible else 0.0
 
-    if total_score >= 80:
+    thresholds = LEVEL_GRADES.get(nivel, LEVEL_GRADES[5])
+    if total_score >= thresholds['A']:
         grade = 'A'
-    elif total_score >= 65:
+    elif total_score >= thresholds['B']:
         grade = 'B'
-    elif total_score >= 50:
+    elif total_score >= thresholds['C']:
         grade = 'C'
     else:
         grade = 'D'
